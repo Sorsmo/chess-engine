@@ -9,27 +9,28 @@ import chess
 from chess.engine import PlayResult
 from engine_wrapper import MinimalEngine
 from typing import Any
+import numpy as np
 
 # material count function
 # pawn(1), knight(3), bishop(3.2), rook(5), queen(9)
 def countMaterial(board):
     total = 0
     for i in range(64):
-        if board.piece_at(i) == None or board.piece_at(i).piece_type == chess.KING:
+        if board.piece_at(i) == None or board.piece_at(i).symbol() in ['K', 'k']:
             continue
         
         to_add = 0
 
         if board.piece_at(i).symbol() in ['P', 'p']:
-            to_add += 1
+            to_add = 100
         elif board.piece_at(i).symbol() in ['N', 'n']:
-            to_add += 3
+            to_add = 300
         elif board.piece_at(i).symbol() in ['B', 'b']:
-            to_add += 3.2
+            to_add = 320
         elif board.piece_at(i).symbol() in ['R', 'r']:
-            to_add += 5
+            to_add = 500
         elif board.piece_at(i).symbol() in ['Q', 'q']:
-            to_add += 9
+            to_add = 900
 
         if board.piece_at(i).color == chess.BLACK:
             total -= to_add
@@ -70,11 +71,88 @@ def alphabeta(board, depth, alpha, beta, maximizingPlayer):
 # calculates basic piece activity
 # prioritizes long diagonal bishops, centered knights and pawns
 def getPieceActivity(board):
-    pawnEval = [0,  0,  0,  0,  0,  0,  0,  0,.05, .10, .10,-.20,-.20, .10, .10,  .05, .05, -.05,-.10,  0,  0,-.10, -.05,  .05,0,  0,  0, .20, .20,  0,  0,  0,0.5,  .05, .10, .25, .25, .10,  .05,  .05,.10, .10, .20, .30, .30, .20, .10, .10,.50, .50, .50, .50, .50, .50, .50, .50,0,  0,  0,  0,  0,  0,  0,  0]
-    knightEval = [-.50,-.40,-.30,-.30,-.30,-.30,-.40,-.50,-.40,-.20, 0,  .05,  .05,  0,-.20,-.40,-.30,  .5, .10, .15, .15, .10,  .05,-.30,-.30, 0, .15, .20, .20, .15,  .0,-.30,-.30,  .05, .15, .20, .20, .15,  .05,-.30,-.30,  0, .10, .15, .15, .10,  0,-.30,-.40,-.20,  0,  0,  0,  0,-.20,-.40,-.50,-.40,-.30,-.30,-.30,-.30,-.40,-.50]
-    bishEval = [-.20,-.10,-.10,-.10,-.10,-.10,-.10,-.20,-.10,  .05,  0,  0,  0,  0,  .05,-.10,-.10, .10, .10, .10, .10, .10, .10,-.10,-.10,  0, .10, .10, .10, .10,  0,-.10,-.10,  .05,  .05, .10, .10,  .05,  .05,-.10,-.10,  0,  .05, .10, .10,  .05,  0,-.10,-.10,  0,  0,  0,  0,  0,  0,-.10,-.20,-.10,-.10,-.10,-.10,-.10,-.10,-.20]
-    rookEval = [0,  0,  0,  .05,  .05,  0,  0,  0,-.05,  0,  0,  0,  0,  0,  0, -.05,-.05,  0,  0,  0,  0,  0,  0, -.05,-.05,  0,  0,  0,  0,  0,  0, -.05,-.05,  0,  0,  0,  0,  0,  0, -.05, -.05,  0,  0,  0,  0,  0,  0, -.05, .05, .10, .10, .10, .10, .10, .10,  .05, 0,  0,  0,  0,  0,  0,  0,  0]
-    queenEval = [-.20,-.10,-.10, -.05, -.05,-.10,-.10,-.20,-.10,  0,  .05,  0,  0,  0,  0,-.10,-.10,  .05,  .05,  .05,  .05,  .05,  0,-.10,0,  0,  .05,  .05,  .05,  .05,  0, -.05, -.05,  0,  .05,  .05,  .05,  .05,  0, -.05,-.10,  0,  .05,  .05,  .05,  .05,  0,-.10,-.10,  0,  0,  0,  0,  0,  0,-.10,-.20,-.10,-.10, -.05, -.05,-.10,-.10,-.20]
+    # A1   B1 ...
+    #
+    #
+    #
+    #           ...
+    #
+    #
+    #                   ... G8   H8
+    
+    
+    pawnEval = [
+         0,  0,   0,   0,   0,   0,  0,  0,
+         5, 10,  10, -20, -20,  10, 10,  5, 
+         5, -5, -10,   0,   0, -10, -5,  5,
+         0,  0,   0,  20,  20,   0,  0,  0, 
+         5,  5,  10,  25,  25,  10,  5,  5,
+        10, 10,  20,  30,  30,  20, 10, 10,
+        50, 50,  50,  50,  50,  50, 50, 50,
+         0,  0,   0,   0,   0,   0,  0,  0
+    ]
+
+    knightEval = [
+        -50, -40, -30, -30, -30, -30, -40, -50,
+        -40, -20,  0,   5,   5,   0,  -20, -40,
+        -30,  5,  10,  15,  15,  10,   5,  -30,
+        -30,  0,  15,  20,  20,  15,   0,  -30,
+        -30,  5,  15,  20,  20,  15,   5,  -30,
+        -30,  0,  10,  15,  15,  10,   0,  -30,
+        -40, -20,  0,   0,   0,   0, -20,  -40,
+        -50, -40,-30, -30, -30, -30, -40,  -50
+    ]
+    
+    bishEval = [
+        -20, -10, -10, -10, -10, -10, -10, -20, 
+        -10,   5,   0,   0,   0,   0,   5, -10, 
+        -10,  10,  10,  10,  10,  10,  10, -10,
+        -10,   0,  10,  10,  10,  10,   0, -10, 
+        -10,   5,   5,  10,  10,   5,   5, -10, 
+        -10,   0,   5,  10,  10,   5,   0, -10, 
+        -10,   0,   0,   0,   0,   0,   0, -10, 
+        -20, -10, -10, -10, -10, -10, -10, -20
+    ]
+    
+    rookEval = [
+         0,  0,  0,  5,  5,  0,  0,  0,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+         5, 10, 10, 10, 10, 10, 10,  5,
+         0,  0,  0,  0,  0,  0,  0,  0
+    ]
+    
+    queenEval = [
+        -20, -10, -10, -5, -5, -10, -10, -20,
+        -10,   0,   5,  0,  0,   0,   0, -10,
+        -10,   5,   5,  5,  5,   5,   0, -10,
+          0,   0,   5,  5,  5,   5,   0,  -5, 
+         -5,   0,   5,  5,  5,   5,   0,  -5,
+        -10,   0,   5,  5,  5,   5,   0, -10, 
+        -10,   0,   0,  0,  0,   0,   0, -10,
+        -20, -10, -10, -5, -5, -10, -10, -20
+    ]
+
+    kingEval = [
+        20, 30, 10,  0,  0, 10, 30, 20,
+        20, 20,  0,  0,  0,  0, 20, 20,
+        -10,-20,-20,-20,-20,-20,-20,-10,
+        -20,-30,-30,-40,-40,-30,-30,-20,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+    ]
+
+    rookRev = rookEval[::-1]
+    knightRev = knightEval[::-1]
+    bishRev = bishEval[::-1]
+    queenRev = queenEval[::-1]
+    pawnRev = pawnEval[::-1]
+    
     total = 0
     for i in range(64):
         if board.piece_at(i) == None or board.piece_at(i).piece_type == chess.KING:
@@ -82,32 +160,37 @@ def getPieceActivity(board):
         
         to_add = 0
         piece_color = board.piece_at(i).color
-        opp_color = chess.WHITE
         if piece_color == chess.WHITE: 
-            opp_color = chess.BLACK;
-        
-        defended = board.attackers(piece_color, i) <= board.attackers(opp_color, i)
-        
-        if board.piece_at(i).piece_type == chess.PAWN:
-            to_add += pawnEval[i]
-            if not defended:
-                to_add -= 1
-        elif board.piece_at(i).piece_type == chess.KNIGHT:
-            to_add += knightEval[i]
-            if not defended:
-                to_add -= 3
-        elif board.piece_at(i).piece_type == chess.BISHOP:
-            to_add += bishEval[i]
-            if not defended:
-                to_add -= 3.2
-        elif board.piece_at(i).piece_type == chess.ROOK:
-            to_add += rookEval[i]
-            if not defended:
-                to_add -= 5
-        elif board.piece_at(i).piece_type == chess.QUEEN:
-            to_add += queenEval[i]
-            if not defended:
-                to_add -= 9
+            opp_color = chess.BLACK
+
+            defended = len(board.attackers(piece_color, i)) <= len(board.attackers(opp_color, i))
+            
+            if board.piece_at(i).piece_type == chess.PAWN:
+                to_add += pawnEval[i]
+            elif board.piece_at(i).piece_type == chess.KNIGHT:
+                to_add += knightEval[i]
+            elif board.piece_at(i).piece_type == chess.BISHOP:
+                to_add += bishEval[i]
+            elif board.piece_at(i).piece_type == chess.ROOK:
+                to_add += rookEval[i]
+            elif board.piece_at(i).piece_type == chess.QUEEN:
+                to_add += queenEval[i]
+
+        elif piece_color == chess.BLACK:
+            opp_color = chess.WHITE
+
+            defended = len(board.attackers(piece_color, i)) <= len(board.attackers(opp_color, i))
+
+            if board.piece_at(i).piece_type == chess.PAWN:
+                to_add += pawnRev[i]
+            elif board.piece_at(i).piece_type == chess.KNIGHT:
+                to_add += knightRev[i]
+            elif board.piece_at(i).piece_type == chess.BISHOP:
+                to_add += bishRev[i]
+            elif board.piece_at(i).piece_type == chess.ROOK:
+                to_add += rookRev[i]
+            elif board.piece_at(i).piece_type == chess.QUEEN:
+                to_add += queenRev[i]
 
         if board.piece_at(i).color == chess.BLACK:
             total -= to_add
@@ -123,6 +206,7 @@ def evaluate(board):
             return -9999
         else:
             return 9999
+       
     evaluation += countMaterial(board)
     evaluation += getPieceActivity(board)
     return evaluation
