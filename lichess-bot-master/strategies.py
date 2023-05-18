@@ -67,11 +67,17 @@ def alphabeta(board, depth, alpha, beta, maximizingPlayer):
         return minEval
 
 def evaluate(board):
+    # check for mate
+    if board.is_checkmate():
+        if board.turn == chess.WHITE:
+            return -9999
+        else:
+            return 9999
     return countMaterial(board)
 
 class YanNepochoEngine(MinimalEngine):
     def search(self, board: chess.Board, *args: Any) -> PlayResult:
-        depth = 5
+        depth = 3
 
         bestValue = -9999 if board.turn == chess.WHITE else 9999            # set best value to -9999 if white, 9999 if black
         bestMove = None
