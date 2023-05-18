@@ -9,7 +9,6 @@ import chess
 from chess.engine import PlayResult
 from engine_wrapper import MinimalEngine
 from typing import Any
-import random
 
 # material count function
 # pawn(1), knights and bishops(3), rook(5), queen(9)
@@ -37,11 +36,59 @@ def countMaterial(board):
         total += to_add
     return total
 
+# https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning
+def alphabeta(board, depth, alpha, beta, maximizingPlayer):
+    if depth == 0 or board.is_game_over():
+        return evaluate(board)
+
+    if maximizingPlayer:
+        maxEval = -9999
+        for move in board.legal_moves:
+            board.push(move)
+            evaluation = alphabeta(board, depth-1, alpha, beta, False)
+            board.pop()
+
+            maxEval = max(maxEval, evaluation)
+            alpha = max(alpha, evaluation)
+            if beta <= alpha:
+                break
+        return maxEval
+    else:
+        minEval = 9999
+        for move in board.legal_moves:
+            board.push(move)
+            evaluation = alphabeta(board, depth-1, alpha, beta, True)
+            board.pop()
+
+            minEval = min(minEval, evaluation)
+            beta = min(beta, evaluation)
+            if beta <= alpha:
+                break
+        return minEval
+
 def evaluate(board):
     return countMaterial(board)
 
 class YanNepochoEngine(MinimalEngine):
     def search(self, board: chess.Board, *args: Any) -> PlayResult:
-        """Choose a random move."""
-        print(evaluate(board))
-        return PlayResult(random.choice(list(board.legal_moves)), None)
+        depth = 5
+
+        bestValue = -9999 if board.turn == chess.WHITE else 9999            # set best value to -9999 if white, 9999 if black
+        bestMove = None
+        for move in board.legal_moves:
+            board.push(move)
+            evaluation = alphabeta(board, depth-1, -9999, 9999, False)
+            board.pop()
+
+            if board.turn == chess.WHITE:
+                if evaluation > bestValue:
+                    bestMove = move
+                    bestValue = evaluation
+            else:
+                if evaluation < bestValue:
+                    bestMove = move
+                    bestValue = evaluation
+        
+        print("Best move: ", bestMove, " with evaluation: ", bestValue)
+
+        return PlayResult(bestMove, None)
