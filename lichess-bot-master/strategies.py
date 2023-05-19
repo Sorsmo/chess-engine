@@ -83,10 +83,10 @@ def getPieceActivity(board):
         to_add = 0
         piece_color = board.piece_at(i).color
         opp_color = chess.WHITE
-        if piece_color == chess.WHITE: 
-            opp_color = chess.BLACK;
+        if piece_color == chess.WHITE:
+            opp_color = chess.BLACK
         
-        defended = board.attackers(piece_color, i) <= board.attackers(opp_color, i)
+        defended = len(board.attackers(piece_color, i)) <= len(board.attackers(opp_color, i))
         
         if board.piece_at(i).piece_type == chess.PAWN:
             to_add += pawnEval[i]
