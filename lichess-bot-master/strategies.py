@@ -166,15 +166,30 @@ def getPieceActivity(board):
             defended = len(board.attackers(piece_color, i)) <= len(board.attackers(opp_color, i))
             
             if board.piece_at(i).piece_type == chess.PAWN:
-                to_add += pawnEval[i]
+                if not defended:
+                    to_add -= 100
+                else:
+                    to_add += pawnEval[i]
             elif board.piece_at(i).piece_type == chess.KNIGHT:
-                to_add += knightEval[i]
+                if not defended:
+                    to_add -= 300
+                else:
+                    to_add += knightEval[i]
             elif board.piece_at(i).piece_type == chess.BISHOP:
-                to_add += bishEval[i]
+                if not defended:
+                    to_add -= 320
+                else:
+                    to_add += bishEval[i]
             elif board.piece_at(i).piece_type == chess.ROOK:
-                to_add += rookEval[i]
+                if not defended:
+                    to_add -= 500
+                else:
+                    to_add += rookEval[i]
             elif board.piece_at(i).piece_type == chess.QUEEN:
-                to_add += queenEval[i]
+                if not defended:
+                    to_add -= 900
+                else:
+                    to_add += queenEval[i]
 
         elif piece_color == chess.BLACK:
             opp_color = chess.WHITE
@@ -182,15 +197,30 @@ def getPieceActivity(board):
             defended = len(board.attackers(piece_color, i)) <= len(board.attackers(opp_color, i))
 
             if board.piece_at(i).piece_type == chess.PAWN:
-                to_add += pawnRev[i]
+                if not defended:
+                    to_add -= 100
+                else:
+                    to_add += pawnRev[i]
             elif board.piece_at(i).piece_type == chess.KNIGHT:
-                to_add += knightRev[i]
+                if not defended:
+                    to_add -= 300
+                else:
+                    to_add += knightRev[i]
             elif board.piece_at(i).piece_type == chess.BISHOP:
-                to_add += bishRev[i]
+                if not defended:
+                    to_add -= 320
+                else:
+                    to_add += bishRev[i]
             elif board.piece_at(i).piece_type == chess.ROOK:
-                to_add += rookRev[i]
+                if not defended:
+                    to_add -= 500
+                else:
+                    to_add += rookRev[i]
             elif board.piece_at(i).piece_type == chess.QUEEN:
-                to_add += queenRev[i]
+                if not defended:
+                    to_add -= 900
+                else:
+                    to_add += queenRev[i]
 
         if board.piece_at(i).color == chess.BLACK:
             total -= to_add
